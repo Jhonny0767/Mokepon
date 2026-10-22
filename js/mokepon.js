@@ -468,17 +468,15 @@ function enviarPosicion(x, y) {
     .then(function(data) {
         if (!data || !data.enemigos) return
         
-        enemigosEnMapa = []
-        
         const enemigosFiltrados = data.enemigos.filter(enemigo => enemigo.mokepon && enemigo.id !== jugadorId)
         
-        enemigosFiltrados.forEach(function(enemigoData) {
+        // AQUÍ ESTÁ LA MAGIA DEL INSTRUCTOR: Usamos .map() en lugar de vaciar el array y hacer push
+        enemigosEnMapa = enemigosFiltrados.map(function(enemigoData) {
             const mokeponNombre = enemigoData.mokepon.nombre.toLowerCase()
             const posX = enemigoData.x
             const posY = enemigoData.y
             
-            // Si el enemigo aún no tiene posición válida, no lo dibujamos ni lo guardamos
-            if (posX === undefined || posY === undefined) return;
+            if (posX === undefined || posY === undefined) return null;
 
             let mokeponEnemigo = null
             if (mokeponNombre === "hipodoge") mokeponEnemigo = new Mokepon('Hipodoge', './assets/Hipodoge2.png', 5, './assets/hipodoge.png')
@@ -489,9 +487,12 @@ function enviarPosicion(x, y) {
                 mokeponEnemigo.x = posX
                 mokeponEnemigo.y = posY
                 mokeponEnemigo.id = enemigoData.id
-                enemigosEnMapa.push(mokeponEnemigo) 
+                return mokeponEnemigo // El map devuelve este objeto para que se guarde en la lista
             }
-        })
+            
+            return null // Si no es ningún mokepon válido, devuelve null
+        }).filter(enemigo => enemigo !== null) // Limpiamos los nulos que hayan quedado
+        
     })
     .catch(function(error) {
         console.error("❌ Error en enviarPosicion:", error)
