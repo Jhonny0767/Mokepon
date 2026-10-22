@@ -1,3 +1,0 @@
-git add .
-git commit -m "Lo que hiciste en la clase"
-git push
