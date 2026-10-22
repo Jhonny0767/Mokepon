@@ -280,10 +280,11 @@ function secuenciaAtaque(){
             }
             
             indexAtaqueJugador = ataqueJugador[ataqueJugador.length - 1]
-            ataqueAleatorioEnemigo()
+            // Se eliminó la llamada a ataqueAleatorioEnemigo() porque ahora es PvP
 
             if (ataqueJugador.length >= 5) {
                 botones.forEach((btn) => { btn.disabled = true })
+                enviarAtaques() 
             }
         })
     })
@@ -314,31 +315,52 @@ function seleccionarMascotaEnemigo(enemigoConcreto) {
     secuenciaAtaque()
 }
 
-function ataqueAleatorioEnemigo() {
-    const ataqueAleatorio = aleatorio(0, ataquesMokeponEnemigo.length - 1)
-    if(ataqueAleatorio == 0 || ataqueAleatorio == 1) ataqueEnemigo.push('FUEGO')
-    else if(ataqueAleatorio == 3 || ataqueAleatorio == 4) ataqueEnemigo.push('AGUA')
-    else ataqueEnemigo.push('TIERRA')
+function enviarAtaques() {
+    fetch(`http://localhost:8080/mokepon/${jugadorId}/ataques`, {
+        method: "post",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            ataques: ataqueJugador
+        })
+    })
+    .then(function (res) {
+        if (res.ok) {
+            return res.json()
+        }
+    })
+    .then(function (data) {
+        if (data && data.ataquesEnemigo && data.ataquesEnemigo.length > 0) {
+            ataqueEnemigo = data.ataquesEnemigo
+            combate()
+        } else {
+            sectionMensajes.innerHTML = "Esperando a que el otro jugador elija sus ataques..."
+            esperarAtaqueEnemigo()
+        }
+    })
+}
 
-    indexAtaqueEnemigo = ataqueEnemigo[ataqueEnemigo.length - 1]
-    
-    let resultado = ""
-    if (indexAtaqueJugador === indexAtaqueEnemigo) {
-        resultado = "Empate"
-    } else if ((indexAtaqueJugador === 'FUEGO' && indexAtaqueEnemigo === 'TIERRA') ||
-               (indexAtaqueJugador === 'AGUA' && indexAtaqueEnemigo === 'FUEGO') ||
-               (indexAtaqueJugador === 'TIERRA' && indexAtaqueEnemigo === 'AGUA')) {
-        resultado = "Ganaste"
-        victoriasJugador++
-        spanVidasJugador.innerHTML = victoriasJugador
-    } else {
-        resultado = "Perdiste"
-        victoriasEnemigo++
-        spanVidasEnemigo.innerHTML = victoriasEnemigo
-    }
-    
-    crearMensaje(resultado)
-    iniciarPelea()
+function esperarAtaqueEnemigo() {
+    const intervaloEspera = setInterval(() => {
+        fetch(`http://localhost:8080/mokepon/${jugadorId}/ataques`, {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                ataques: ataqueJugador
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.ataquesEnemigo && data.ataquesEnemigo.length > 0) {
+                clearInterval(intervaloEspera) 
+                ataqueEnemigo = data.ataquesEnemigo
+                combate() 
+            }
+        })
+    }, 2000)
 }
  
 function iniciarPelea(){
@@ -432,7 +454,6 @@ function pintarPersonaje() {
         if (enemigosEnMapa[i] && enemigosEnMapa[i].mapaFoto) {
             enemigosEnMapa[i].pintarMokepon()
             
-            // Círculo rojo para distinguir enemigos
             lienzo.beginPath();
             lienzo.arc(enemigosEnMapa[i].x + 20, enemigosEnMapa[i].y + 20, 25, 0, 2 * Math.PI);
             lienzo.strokeStyle = 'red';
@@ -443,7 +464,6 @@ function pintarPersonaje() {
     
     enviarPosicion(personajeActual.x, personajeActual.y)
     
-    // Solo revisar colisiones si el jugador se está moviendo
     if(personajeActual.velocidadX !== 0 || personajeActual.velocidadY !== 0) {
         for (let i = 0; i < enemigosEnMapa.length; i++) {
             if (revisarColision(enemigosEnMapa[i])) break
@@ -470,7 +490,6 @@ function enviarPosicion(x, y) {
         
         const enemigosFiltrados = data.enemigos.filter(enemigo => enemigo.mokepon && enemigo.id !== jugadorId)
         
-        // AQUÍ ESTÁ LA MAGIA DEL INSTRUCTOR: Usamos .map() en lugar de vaciar el array y hacer push
         enemigosEnMapa = enemigosFiltrados.map(function(enemigoData) {
             const mokeponNombre = enemigoData.mokepon.nombre.toLowerCase()
             const posX = enemigoData.x
@@ -487,11 +506,21 @@ function enviarPosicion(x, y) {
                 mokeponEnemigo.x = posX
                 mokeponEnemigo.y = posY
                 mokeponEnemigo.id = enemigoData.id
-                return mokeponEnemigo // El map devuelve este objeto para que se guarde en la lista
+                return mokeponEnemigo 
             }
             
-            return null // Si no es ningún mokepon válido, devuelve null
-        }).filter(enemigo => enemigo !== null) // Limpiamos los nulos que hayan quedado
+            return null 
+        }).filter(enemigo => enemigo !== null) 
+        
+        // --- NUEVA LÓGICA DE COMBATE DESDE EL SERVIDOR ---
+        if (data.huboColision) {
+            for (let i = 0; i < enemigosEnMapa.length; i++) {
+                if (revisarColision(enemigosEnMapa[i])) {
+                    break;
+                }
+            }
+        }
+        // -------------------------------------------------
         
     })
     .catch(function(error) {
@@ -536,7 +565,6 @@ function detenerMovimiento() {
 function revisarColision(enemigo) {
     if (!personajeActual || !enemigo) return false;
     
-    // BLINDAJE: Si algún personaje no tiene coordenadas válidas o son NaN, ignoramos la colisión
     if (enemigo.x === undefined || enemigo.y === undefined || isNaN(enemigo.x) || isNaN(enemigo.y)) return false;
     if (personajeActual.x === undefined || personajeActual.y === undefined || isNaN(personajeActual.x) || isNaN(personajeActual.y)) return false;
 
