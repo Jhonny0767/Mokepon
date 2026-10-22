@@ -37,7 +37,6 @@ class Mokepon {
     }
 }
 
-// 1. Ruta para unirse al juego
 app.get("/unirse", (req, res) => {
     const id = `${Math.random()}`
     const jugador = new Jugador(id)
@@ -46,7 +45,6 @@ app.get("/unirse", (req, res) => {
     res.send(id)
 })
 
-// 2. Ruta para asignar el Mokepon elegido
 app.post("/mokepon/:jugadorId", (req, res) => {
     const jugadorId = req.params.jugadorId || ""
     const nombre = req.body.mokepon || ""
@@ -60,7 +58,6 @@ app.post("/mokepon/:jugadorId", (req, res) => {
     res.end()      
 })  
 
-// 3. Ruta para actualizar posición y detectar colisiones
 app.post("/mokepon/:jugadorId/posicion", (req, res) => {
     const jugadorId = req.params.jugadorId || ""
     const x = req.body.x || 0 
@@ -72,7 +69,6 @@ app.post("/mokepon/:jugadorId/posicion", (req, res) => {
         jugadores[jugadorIndex].actualizarPosicion(x, y)
     }
 
-    // Lógica de colisión en el servidor
     let huboColision = false
     const jugadorActual = jugadores[jugadorIndex]
     
@@ -80,7 +76,6 @@ app.post("/mokepon/:jugadorId/posicion", (req, res) => {
         for (let i = 0; i < jugadores.length; i++) {
             const enemigo = jugadores[i]
             if (enemigo.id !== jugadorId && enemigo.x !== undefined && enemigo.y !== undefined) {
-                // Si los rectángulos se superponen, hay colisión
                 if (jugadorActual.x < enemigo.x + 40 &&
                     jugadorActual.x + 40 > enemigo.x &&
                     jugadorActual.y < enemigo.y + 40 &&
@@ -92,7 +87,6 @@ app.post("/mokepon/:jugadorId/posicion", (req, res) => {
         }
     }
 
-    // Filtrar enemigos activos (menos de 5 segundos sin moverse)
     const enemigos = jugadores.filter((jugador) => {
         const esEnemigo = jugador.id !== jugadorId
         const estaActivo = (Date.now() - jugador.ultimaVez) < 5000
@@ -105,7 +99,6 @@ app.post("/mokepon/:jugadorId/posicion", (req, res) => {
     })
 })
 
-// 4. Ruta para recibir y cruzar los ataques (PvP)
 app.post("/mokepon/:jugadorId/ataques", (req, res) => {
     const jugadorId = req.params.jugadorId || ""
     const ataques = req.body.ataques || []
@@ -115,7 +108,18 @@ app.post("/mokepon/:jugadorId/ataques", (req, res) => {
         jugadores[jugadorIndex].asignarAtaques(ataques)
     }
 
-    const enemigo = jugadores.find((jugador) => jugador.id !== jugadorId && jugador.ataques)
+    // Si el jugador aún no envía sus 5 ataques, no devolvemos nada
+    if (ataques.length < 5) {
+        res.send({ ataquesEnemigo: [] })
+        return
+    }
+
+    // Buscamos un enemigo que también haya enviado sus 5 ataques
+    const enemigo = jugadores.find((jugador) => 
+        jugador.id !== jugadorId && 
+        jugador.ataques && 
+        jugador.ataques.length === 5
+    )
 
     if (enemigo) {
         res.send({ ataquesEnemigo: enemigo.ataques })

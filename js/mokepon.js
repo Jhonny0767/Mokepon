@@ -14,9 +14,6 @@ const sectionMensajes = document.getElementById('resultado')
 const elementoAtaqueJugador = document.getElementById('ataque-Jugador') 
 const elementoAtaqueEnemigo = document.getElementById('ataque-Enemigo') 
 
-const notificacion = document.createElement('p')
-const nuevoAtaqueJugador = document.createElement('p')
-const nuevoAtaqueEnemigo = document.createElement('p')
 const contenedorTarjetas = document.getElementById('contenedorTarjetas')
 const contenedorAtaques = document.getElementById('contenedorAtaques')
 
@@ -41,12 +38,8 @@ let botonFuego
 let botonAgua
 let botonTierra 
 let botones = []
-let indexAtaqueJugador
-let indexAtaqueEnemigo
 let victoriasJugador = 0
 let victoriasEnemigo = 0
-let vidasJugador = 3
-let vidasEnemigo = 3
 let lienzo = mapa.getContext("2d")
 let intervalo
 let personajeActual = null
@@ -55,7 +48,6 @@ let fondoMapa = new Image()
 let fondoCargado = false
 let alturaQueBuscamos
 let anchoDelMapa = window.innerWidth - 20
-let contadorLlamadas = 0
 let enemigosEnMapa = []
 const anchoMaximoDelMapa = 500
 
@@ -107,7 +99,6 @@ const HIPODOGE_ATAQUES = [
     {nombre: '🔥', id: 'boton-fuego'},
     {nombre: '🌱', id: 'boton-tierra'},
 ]
-
 Hipodoge.ataques.push(...HIPODOGE_ATAQUES)
 
 const CAPIPEPO_ATAQUES = [
@@ -117,7 +108,6 @@ const CAPIPEPO_ATAQUES = [
     {nombre: '💧', id: 'boton-agua'},
     {nombre: '🔥', id: 'boton-fuego'},
 ]
-
 Capipepo.ataques.push(...CAPIPEPO_ATAQUES)
 
 const RATIGUEYA_ATAQUES = [
@@ -127,7 +117,6 @@ const RATIGUEYA_ATAQUES = [
     {nombre: '💧', id: 'boton-agua'},
     {nombre: '🌱', id: 'boton-tierra'},
 ]
-
 Ratigueya.ataques.push(...RATIGUEYA_ATAQUES)
 
 mokepones.push(Hipodoge, Capipepo, Ratigueya)
@@ -166,7 +155,7 @@ function iniciarJuego() {
     
     botonMascotaJugador.addEventListener('click', seleccionarMascotaJugador)
     
-    botonReiniciar = document.getElementById('boton-reiniciar')
+    let botonReiniciar = document.getElementById('boton-reiniciar')
     if (botonReiniciar) {
         botonReiniciar.addEventListener('click', reiniciarJuego)
     }
@@ -186,7 +175,6 @@ function unirseAlJuego() {
             if (res.ok) {
                 res.text()
                     .then(function (respuesta) {
-                        console.log("Mi ID:", respuesta)
                         jugadorId = respuesta
                     })
             }
@@ -222,12 +210,8 @@ function seleccionarMascotaJugador() {
 function seleccionarMokepon(mascotaJugador) {
     fetch(`http://localhost:8080/mokepon/${jugadorId}`, {
         method: "post",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            mokepon: mascotaJugador
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mokepon: mascotaJugador })
     })
 }
 
@@ -247,17 +231,14 @@ function mostrarAtaques(ataques) {
     contenedorAtaques.innerHTML = ''
     
     ataques.forEach((ataque) => {
-        ataquesMokepon = `<button id="${ataque.id}" class="boton-de-ataque BAtaque">${ataque.nombre}</button>`
+        let ataquesMokepon = `<button id="${ataque.id}" class="boton-de-ataque BAtaque">${ataque.nombre}</button>`
         contenedorAtaques.innerHTML += ataquesMokepon 
     })
 
     botonFuego = document.getElementById('boton-fuego')
     botonAgua = document.getElementById('boton-agua')
     botonTierra = document.getElementById('boton-tierra')
-    botonReiniciar = document.getElementById('boton-reiniciar')
     botones = document.querySelectorAll('.BAtaque')
-
-    if (botonReiniciar) botonReiniciar.addEventListener('click', reiniciarJuego)
 }
 
 function secuenciaAtaque(){
@@ -265,24 +246,14 @@ function secuenciaAtaque(){
         boton.addEventListener('click', (e) => {
             if (ataqueJugador.length >= 5) return 
             
-            if(e.target.textContent === '🔥'){
-                ataqueJugador.push('FUEGO')
-                manejarSeleccionAtaque('boton-fuego')
-                boton.disabled = true
-            } else if(e.target.textContent === '💧'){
-                ataqueJugador.push('AGUA')
-                manejarSeleccionAtaque('boton-agua')
-                boton.disabled = true
-            } else {
-                ataqueJugador.push('TIERRA')
-                manejarSeleccionAtaque('boton-tierra')
-                boton.disabled = true
-            }
+            if(e.target.textContent === '🔥') ataqueJugador.push('FUEGO')
+            else if(e.target.textContent === '💧') ataqueJugador.push('AGUA')
+            else ataqueJugador.push('TIERRA')
             
-            indexAtaqueJugador = ataqueJugador[ataqueJugador.length - 1]
-            // Se eliminó la llamada a ataqueAleatorioEnemigo() porque ahora es PvP
+            manejarSeleccionAtaque(e.target.id)
+            boton.disabled = true
 
-            if (ataqueJugador.length >= 5) {
+            if (ataqueJugador.length === 5) {
                 botones.forEach((btn) => { btn.disabled = true })
                 enviarAtaques() 
             }
@@ -318,20 +289,14 @@ function seleccionarMascotaEnemigo(enemigoConcreto) {
 function enviarAtaques() {
     fetch(`http://localhost:8080/mokepon/${jugadorId}/ataques`, {
         method: "post",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            ataques: ataqueJugador
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ataques: ataqueJugador })
     })
     .then(function (res) {
-        if (res.ok) {
-            return res.json()
-        }
+        if (res.ok) return res.json()
     })
     .then(function (data) {
-        if (data && data.ataquesEnemigo && data.ataquesEnemigo.length > 0) {
+        if (data && data.ataquesEnemigo && data.ataquesEnemigo.length === 5) {
             ataqueEnemigo = data.ataquesEnemigo
             combate()
         } else {
@@ -345,16 +310,12 @@ function esperarAtaqueEnemigo() {
     const intervaloEspera = setInterval(() => {
         fetch(`http://localhost:8080/mokepon/${jugadorId}/ataques`, {
             method: "post",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                ataques: ataqueJugador
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ataques: ataqueJugador })
         })
         .then(res => res.json())
         .then(data => {
-            if (data && data.ataquesEnemigo && data.ataquesEnemigo.length > 0) {
+            if (data && data.ataquesEnemigo && data.ataquesEnemigo.length === 5) {
                 clearInterval(intervaloEspera) 
                 ataqueEnemigo = data.ataquesEnemigo
                 combate() 
@@ -362,56 +323,75 @@ function esperarAtaqueEnemigo() {
         })
     }, 2000)
 }
- 
-function iniciarPelea(){
-    if (ataqueJugador.length === 5 && ataqueEnemigo.length === 5 && !combateEjecutado) {
-        combateEjecutado = true; 
-        combate()
-    }
-}
 
-function combate() {
+async function combate() {
     let victoriasJugadorFinal = 0
     let victoriasEnemigoFinal = 0
     
+    elementoAtaqueJugador.innerHTML = ''
+    elementoAtaqueEnemigo.innerHTML = ''
+    
+    // Reiniciamos los contadores visuales a 0
+    spanVidasJugador.innerHTML = '0'
+    spanVidasEnemigo.innerHTML = '0'
+
     for (let index = 0; index < ataqueJugador.length; index++) {
-        if (ataqueJugador[index] === ataqueEnemigo[index]){
+        let ataqueJ = ataqueJugador[index]
+        let ataqueE = ataqueEnemigo[index]
+        
+        // Creamos los elementos <p> para mostrar el ataque
+        const pJugador = document.createElement('p')
+        const pEnemigo = document.createElement('p')
+        pJugador.innerHTML = ataqueJ
+        pEnemigo.innerHTML = ataqueE
+        pJugador.style.fontSize = '16px'
+        pEnemigo.style.margin = '3px'
+        pJugador.style.margin = '3px'
+        pEnemigo.style.fontSize = '16px'
+        
+        // Ponemos colores para distinguir los ataques
+        if (ataqueJ === 'FUEGO') pJugador.style.color = '#ff4444'
+        else if (ataqueJ === 'AGUA') pJugador.style.color = '#38bdf8'
+        else pJugador.style.color = '#22c55e'
+
+        if (ataqueE === 'FUEGO') pEnemigo.style.color = '#ff4444'
+        else if (ataqueE === 'AGUA') pEnemigo.style.color = '#38bdf8'
+        else pEnemigo.style.color = '#22c55e'
+
+        elementoAtaqueJugador.appendChild(pJugador)
+        elementoAtaqueEnemigo.appendChild(pEnemigo)
+
+        // Lógica para sumar los puntos
+        let mensajeTurno = ""
+        if (ataqueJ === ataqueE){
             victoriasJugadorFinal += 0.5
             victoriasEnemigoFinal += 0.5
-        } else if ((ataqueJugador[index] === 'FUEGO' && ataqueEnemigo[index] === 'TIERRA') ||
-                   (ataqueJugador[index] === 'AGUA' && ataqueEnemigo[index] === 'FUEGO') ||
-                   (ataqueJugador[index] === 'TIERRA' && ataqueEnemigo[index] === 'AGUA')){
+            mensajeTurno = "Empate en el turno"
+        } else if ((ataqueJ === 'FUEGO' && ataqueE === 'TIERRA') ||
+                   (ataqueJ === 'AGUA' && ataqueE === 'FUEGO') ||
+                   (ataqueJ === 'TIERRA' && ataqueE === 'AGUA')){
             victoriasJugadorFinal++
+            mensajeTurno = "Ganaste el turno"
         } else {
             victoriasEnemigoFinal++
+            mensajeTurno = "Perdiste el turno"
         }
+        
+        // ¡AQUÍ ESTÁ LA MAGIA! Actualizamos los ceros en la pantalla
+        spanVidasJugador.innerHTML = victoriasJugadorFinal
+        spanVidasEnemigo.innerHTML = victoriasEnemigoFinal
+
+        // Mostramos un mensaje de qué pasó en este turno específico
+        sectionMensajes.innerHTML = `Turno ${index + 1}: ${mensajeTurno}`
+        
+        // Hacemos una pausa de 1 segundo (1000 ms) antes de calcular el siguiente ataque
+        await new Promise(resolve => setTimeout(resolve, 1000))
     }
     
+    // Al terminar los 5 turnos, mostramos el resultado final
     if (victoriasJugadorFinal === victoriasEnemigoFinal) crearMensajeFinal('👾Esto fue Empate👾!!!')
     else if (victoriasJugadorFinal < victoriasEnemigoFinal) crearMensajeFinal('☹️ Lo siento perdiste ☹️:(')
     else crearMensajeFinal(' !Felicitaciones¡👍😁🥳 GANASTE 👍😁🥳 :)')
-}
-
-function crearMensaje(resultado) {
-    if (combateEjecutado) return
-    sectionMensajes.innerHTML = resultado
-    
-    const nuevoAtaqueJugador = document.createElement('p')
-    const nuevoAtaqueEnemigo = document.createElement('p')
-    
-    nuevoAtaqueJugador.innerHTML = indexAtaqueJugador
-    nuevoAtaqueEnemigo.innerHTML = indexAtaqueEnemigo
-    
-    nuevoAtaqueJugador.style.fontSize = '16px'  
-    nuevoAtaqueJugador.style.display = 'inline-block'
-    nuevoAtaqueJugador.style.margin = '3px'
-    
-    nuevoAtaqueEnemigo.style.fontSize = '16px'  
-    nuevoAtaqueEnemigo.style.display = 'inline-block'
-    nuevoAtaqueEnemigo.style.margin = '3px'
-    
-    elementoAtaqueJugador.appendChild(nuevoAtaqueJugador)
-    elementoAtaqueEnemigo.appendChild(nuevoAtaqueEnemigo)
 }
 
 function crearMensajeFinal(resultadoFinal) {
@@ -476,9 +456,7 @@ function enviarPosicion(x, y) {
     
     fetch(`http://localhost:8080/mokepon/${jugadorId}/posicion`, {
         method: "post",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ x, y })
     })
     .then(function(res) {
@@ -508,20 +486,14 @@ function enviarPosicion(x, y) {
                 mokeponEnemigo.id = enemigoData.id
                 return mokeponEnemigo 
             }
-            
             return null 
         }).filter(enemigo => enemigo !== null) 
         
-        // --- NUEVA LÓGICA DE COMBATE DESDE EL SERVIDOR ---
-        if (data.huboColision) {
+        if (data.huboColision && sectionVerMapa.style.display !== 'none') {
             for (let i = 0; i < enemigosEnMapa.length; i++) {
-                if (revisarColision(enemigosEnMapa[i])) {
-                    break;
-                }
+                if (revisarColision(enemigosEnMapa[i])) break;
             }
         }
-        // -------------------------------------------------
-        
     })
     .catch(function(error) {
         console.error("❌ Error en enviarPosicion:", error)
@@ -585,8 +557,6 @@ function revisarColision(enemigo) {
     ) {
         return false
     }
-    
-    console.log("¡COLISIÓN DETECTADA con", enemigo.nombre)
     
     detenerMovimiento()
     clearInterval(intervalo)
