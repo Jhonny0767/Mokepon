@@ -21,6 +21,7 @@ const sectionVerMapa = document.getElementById('ver-mapa')
 const mapa = document.getElementById('mapa')
 
 let jugadorId = null
+let enemigoId = null
 let mokepones = []
 let ataqueJugador = []
 let ataqueEnemigo = []
@@ -290,7 +291,10 @@ function enviarAtaques() {
     fetch(`http://localhost:8080/mokepon/${jugadorId}/ataques`, {
         method: "post",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ataques: ataqueJugador })
+        body: JSON.stringify({ 
+            ataques: ataqueJugador,
+            enemigoId: enemigoId // <--- Enviamos el ID
+        })
     })
     .then(function (res) {
         if (res.ok) return res.json()
@@ -311,7 +315,10 @@ function esperarAtaqueEnemigo() {
         fetch(`http://localhost:8080/mokepon/${jugadorId}/ataques`, {
             method: "post",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ataques: ataqueJugador })
+            body: JSON.stringify({ 
+                ataques: ataqueJugador,
+                enemigoId: enemigoId // <--- Enviamos el ID
+            })
         })
         .then(res => res.json())
         .then(data => {
@@ -558,6 +565,10 @@ function revisarColision(enemigo) {
         return false
     }
     
+    // --- ¡AQUÍ GUARDAMOS EL ID! ---
+    enemigoId = enemigo.id 
+    // ------------------------------
+
     detenerMovimiento()
     clearInterval(intervalo)
     

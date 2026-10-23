@@ -37,6 +37,7 @@ class Mokepon {
     }
 }
 
+// 1. Ruta para unirse
 app.get("/unirse", (req, res) => {
     const id = `${Math.random()}`
     const jugador = new Jugador(id)
@@ -45,6 +46,7 @@ app.get("/unirse", (req, res) => {
     res.send(id)
 })
 
+// 2. Ruta para asignar Mokepon
 app.post("/mokepon/:jugadorId", (req, res) => {
     const jugadorId = req.params.jugadorId || ""
     const nombre = req.body.mokepon || ""
@@ -58,6 +60,7 @@ app.post("/mokepon/:jugadorId", (req, res) => {
     res.end()      
 })  
 
+// 3. Ruta para actualizar posición y detectar colisiones
 app.post("/mokepon/:jugadorId/posicion", (req, res) => {
     const jugadorId = req.params.jugadorId || ""
     const x = req.body.x || 0 
@@ -99,9 +102,11 @@ app.post("/mokepon/:jugadorId/posicion", (req, res) => {
     })
 })
 
+// 4. Ruta para recibir ataques y cruzar con el enemigo específico
 app.post("/mokepon/:jugadorId/ataques", (req, res) => {
     const jugadorId = req.params.jugadorId || ""
     const ataques = req.body.ataques || []
+    const enemigoId = req.body.enemigoId || "" // Recibimos el ID del enemigo
 
     const jugadorIndex = jugadores.findIndex((jugador) => jugador.id === jugadorId)
     if (jugadorIndex >= 0) {
@@ -114,14 +119,10 @@ app.post("/mokepon/:jugadorId/ataques", (req, res) => {
         return
     }
 
-    // Buscamos un enemigo que también haya enviado sus 5 ataques
-    const enemigo = jugadores.find((jugador) => 
-        jugador.id !== jugadorId && 
-        jugador.ataques && 
-        jugador.ataques.length === 5
-    )
+    // Buscamos ESPECÍFICAMENTE al enemigo con el enemigoId
+    const enemigo = jugadores.find((jugador) => jugador.id === enemigoId)
 
-    if (enemigo) {
+    if (enemigo && enemigo.ataques && enemigo.ataques.length === 5) {
         res.send({ ataquesEnemigo: enemigo.ataques })
     } else {
         res.send({ ataquesEnemigo: [] })
