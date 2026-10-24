@@ -171,7 +171,7 @@ function iniciarJuego() {
 }
 
 function unirseAlJuego() {
-    fetch("http://localhost:8080/unirse")
+    fetch("/unirse")
         .then(function (res) {
             if (res.ok) {
                 res.text()
@@ -209,7 +209,7 @@ function seleccionarMascotaJugador() {
 }
 
 function seleccionarMokepon(mascotaJugador) {
-    fetch(`http://localhost:8080/mokepon/${jugadorId}`, {
+    fetch(`/mokepon/${jugadorId}`, {
         method: "post",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mokepon: mascotaJugador })
@@ -288,7 +288,7 @@ function seleccionarMascotaEnemigo(enemigoConcreto) {
 }
 
 function enviarAtaques() {
-    fetch(`http://localhost:8080/mokepon/${jugadorId}/ataques`, {
+    fetch(`/mokepon/${jugadorId}/ataques`, {
         method: "post",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -312,7 +312,7 @@ function enviarAtaques() {
 
 function esperarAtaqueEnemigo() {
     const intervaloEspera = setInterval(() => {
-        fetch(`http://localhost:8080/mokepon/${jugadorId}/ataques`, {
+        fetch(`/mokepon/${jugadorId}/ataques`, {
             method: "post",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
@@ -461,7 +461,7 @@ function pintarPersonaje() {
 function enviarPosicion(x, y) {
     if (!jugadorId) return
     
-    fetch(`http://localhost:8080/mokepon/${jugadorId}/posicion`, {
+    fetch(`/mokepon/${jugadorId}/posicion`, {
         method: "post",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ x, y })
